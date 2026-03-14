@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberMentor — Learn Security by Breaking Things</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1f2d47;
+      --accent: #00d4ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --code-bg: #0d1117;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Animations */
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 8px var(--accent); }
+      50% { box-shadow: 0 0 24px var(--accent), 0 0 48px var(--accent); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slide-in {
+      from { transform: translateX(-20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes scan-line {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    .fade-in { animation: fade-in 0.3s ease-out; }
+    .slide-in { animation: slide-in 0.3s ease-out; }
+
+    /* Layout */
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
+    .navbar {
+      background: rgba(17, 24, 39, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo-icon { font-size: 24px; }
+    .logo-cyber { color: var(--accent); }
+    .logo-mentor { color: var(--text); }
+
+    .score-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .score-num { color: var(--accent); font-family: var(--font-mono); }
+
+    .main { flex: 1; display: flex; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      overflow-y: auto;
+      height: calc(100vh - 60px);
+      position: sticky;
+      top: 60px;
+    }
+    .sidebar-section { margin-bottom: 24px; }
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      padding: 0 20px;
+      margin-bottom: 8px;
+    }
+
+    .diff-filter {
+      display: flex;
+      gap: 4px;
+      padding: 0 20px;
+      margin-bottom: 16px;
+    }
+    .diff-btn {
+      flex: 1;
+      padding: 5px 0;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .diff-btn.active { background: var(--surface2); color: var(--text); }
+    .diff-btn.beginner.active { border-color: var(--accent3); color: var(--accent3); }
+    .diff-btn.intermediate.active { border-color: var(--warn); color: var(--warn); }
+    .diff-btn.advanced.active { border-color: var(--danger); color: var(--danger); }
+
+    .challenge-item {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .challenge-item:hover { background: var(--surface2); }
+    .challenge-item.active {
+      background: rgba(0, 212, 255, 0.07);
+      border-left-color: var(--accent);
+    }
+    .challenge-item.solved { opacity: 0.7; }
+    .challenge-meta { flex: 1; min-width: 0; }
+    .challenge-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .challenge-item.active .challenge-title { color: var(--accent); }
+    .challenge-tags-row {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .owasp-chip {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(124, 58, 237, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.3);
+    }
+    .diff-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .diff-dot.beginner { background: var(--accent3); }
+    .diff-dot.intermediate { background: var(--warn); }
+    .diff-dot.advanced { background: var(--danger); }
+    .solved-check { color: var(--accent3); font-size: 14px; }
+
+    /* Main content */
+    .content { flex: 1; overflow-y: auto; padding: 28px; }
+
+    /* Landing hero */
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .hero-icon { font-size: 64px; margin-bottom: 20px; }
+    .hero-title {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+    .hero-title .cyan { color: var(--accent); }
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .owasp-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 32px 0;
+    }
+    .owasp-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .owasp-card-id {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .start-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #000;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 14px 32px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.3);
+    }
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(0, 212, 255, 0.5);
+    }
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: var(--font-mono);
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Challenge view */
+    .challenge-view { max-width: 900px; animation: fade-in 0.25s ease-out; }
+    .challenge-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+    .challenge-header-left { flex: 1; }
+    .challenge-title-big {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .challenge-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .badge-owasp {
+      background: rgba(124, 58, 237, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.3);
+    }
+    .badge-beginner {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent3);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-intermediate {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warn);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-advanced {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .description-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent2);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    /* Code block */
+    .code-section { margin-bottom: 20px; }
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 10px 16px;
+    }
+    .code-lang {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .code-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 0 0 8px 8px;
+      padding: 20px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: #c9d1d9;
+    }
+    /* Syntax highlight */
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .cm { color: #8b949e; font-style: italic; }
+    .num { color: #79c0ff; }
+    .vuln-line { background: rgba(239, 68, 68, 0.12); display: block; margin: 0 -20px; padding: 0 20px; }
+
+    /* Action buttons */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #000;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3); }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent3);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .btn-success:hover { background: rgba(16, 185, 129, 0.2); }
+    .btn-warn {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warn);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+    /* Level selector */
+    .level-selector { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; }
+    .level-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .level-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .level-btn.active { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+
+    /* AI Response */
+    .ai-response {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      animation: fade-in 0.3s ease-out;
+    }
+    .ai-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .ai-content {
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+    .ai-content code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent3);
+      border: 1px solid var(--border);
+    }
+
+    /* Loading spinner */
+    .loading-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 14px;
+      padding: 12px 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Fix editor */
+    .fix-editor {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .fix-editor-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    textarea {
+      width: 100%;
+      background: var(--code-bg);
+      color: #c9d1d9;
+      border: none;
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      min-height: 200px;
+    }
+
+    /* Hint box */
+    .hint-box {
+      background: rgba(245, 158, 11, 0.05);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-left: 3px solid var(--warn);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      animation: fade-in 0.25s ease-out;
+    }
+    .hint-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--warn);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .hint-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+
+    /* CVE box */
+    .cve-box {
+      background: rgba(124, 58, 237, 0.05);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .cve-icon { font-size: 18px; }
+    .cve-label { color: var(--text-muted); }
+    .cve-value { color: #a78bfa; font-weight: 600; font-family: var(--font-mono); font-size: 12px; }
+
+    /* Completion banner */
+    .solved-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(0, 212, 255, 0.05));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      animation: fade-in 0.3s ease-out;
+    }
+    .solved-banner h3 { font-size: 20px; color: var(--accent3); margin-bottom: 6px; }
+    .solved-banner p { color: var(--text-muted); font-size: 14px; }
+    .points-pop { font-size: 28px; font-weight: 800; color: var(--accent); font-family: var(--font-mono); }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 16px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.5s ease;
+    }
+
+    /* Tab area */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Chat */
+    .chat-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; max-height: 400px; overflow-y: auto; }
+    .chat-msg { display: flex; gap: 10px; animation: fade-in 0.2s ease-out; }
+    .chat-msg.user { flex-direction: row-reverse; }
+    .chat-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .chat-avatar.ai { background: rgba(0, 212, 255, 0.15); border: 1px solid rgba(0, 212, 255, 0.3); }
+    .chat-avatar.user { background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .chat-bubble.ai {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .chat-bubble.user {
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      color: var(--text);
+    }
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .owasp-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── API base URL — change to your backend URL when deployed ─────────────────
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'
+  : '';
+
+// ─── Embedded challenge data (fallback / offline mode) ───────────────────────
+const EMBEDDED_CHALLENGES = [
+  {
+    id: "sqli-01", title: "The Login That Lets Everyone In",
+    owasp_id: "A03", owasp_name: "Injection", difficulty: "beginner", language: "python",
+    description: "A developer wrote a login function that checks username and password against a database. Can you spot why any user could log in with the password `' OR '1'='1`?",
+    vulnerable_code: `import sqlite3\n\ndef login(username: str, password: str) -> bool:\n    conn = sqlite3.connect("users.db")\n    cursor = conn.cursor()\n\n    # BUG: string concatenation → SQL injection\n    query = f"SELECT * FROM users WHERE username='{'{'}username{'}'}' AND password='{'{'}password{'}'}'\"\n    cursor.execute(query)\n    result = cursor.fetchone()\n\n    conn.close()\n    return result is not None`,
+    cve_example: "CVE-2012-1823", hint_count: 3, tags: ["sql","injection","login"]
+  },
+  {
+    id: "xss-01", title: "The Message Board That Remembers Too Much",
+    owasp_id: "A03", owasp_name: "Injection", difficulty: "beginner", language: "javascript",
+    description: "This comment rendering function directly inserts user content into the DOM. Why is this dangerous, and what could an attacker post?",
+    vulnerable_code: `function renderComment(comment) {\n    const div = document.createElement('div');\n    // BUG: innerHTML executes embedded scripts\n    div.innerHTML = comment.text;\n    document.getElementById('comments').appendChild(div);\n}`,
+    cve_example: "CVE-2018-6492", hint_count: 3, tags: ["xss","dom","javascript"]
+  },
+  {
+    id: "idor-01", title: "Whose Invoice Is This Anyway?",
+    owasp_id: "A01", owasp_name: "Broken Access Control", difficulty: "beginner", language: "python",
+    description: "This API lets users download their invoices. User 42 discovered they can download user 1's invoice by changing the URL. What's missing?",
+    vulnerable_code: `@app.route('/api/invoice/<int:invoice_id>')\ndef get_invoice(invoice_id: int):\n    invoice = db.query(\n        "SELECT * FROM invoices WHERE id = ?",\n        (invoice_id,)\n    ).fetchone()\n    # BUG: no ownership check!\n    if not invoice:\n        return {"error": "Not found"}, 404\n    return send_file(f"invoices/{invoice_id}.pdf")`,
+    cve_example: "OWASP IDOR pattern", hint_count: 3, tags: ["idor","authorization","api"]
+  },
+  {
+    id: "hardcoded-secret", title: "Secrets in Plain Sight",
+    owasp_id: "A02", owasp_name: "Cryptographic Failures", difficulty: "beginner", language: "python",
+    description: "A developer pushed this authentication module to a public GitHub repo. What's the critical mistake?",
+    vulnerable_code: `import jwt\n\n# BUG: hardcoded secret — anyone can forge tokens!\nSECRET_KEY = "mysecretkey123"\nALGORITHM = "HS256"\n\ndef create_token(user_id: int) -> str:\n    return jwt.encode({"sub": str(user_id)}, SECRET_KEY, algorithm=ALGORITHM)\n\ndef verify_token(token: str) -> dict:\n    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])`,
+    cve_example: "CVE-2021-20323", hint_count: 3, tags: ["secrets","jwt","credentials"]
+  },
+  {
+    id: "cmdi-01", title: "The Ping Tool That Pings Too Much",
+    owasp_id: "A03", owasp_name: "Injection", difficulty: "intermediate", language: "python",
+    description: "A network utility lets admins ping a host from the server. An attacker found they can run any command. How?",
+    vulnerable_code: `import subprocess\nfrom flask import request\n\n@app.route('/admin/ping')\ndef ping_host():\n    host = request.args.get('host', '')\n    # BUG: shell=True + user input = command injection\n    result = subprocess.run(\n        f"ping -c 4 {'{'}host{'}'}",\n        shell=True, capture_output=True, text=True\n    )\n    return {"output": result.stdout}`,
+    cve_example: "CVE-2014-6271", hint_count: 3, tags: ["command-injection","shell","subprocess"]
+  },
+  {
+    id: "ssrf-01", title: "The Webhook That Calls Home",
+    owasp_id: "A10", owasp_name: "SSRF", difficulty: "intermediate", language: "python",
+    description: "This webhook validator fetches a URL provided by the user. Why could this let an attacker read your AWS credentials?",
+    vulnerable_code: `import requests\nfrom flask import request\n\n@app.route('/api/webhook/verify', methods=['POST'])\ndef verify_webhook():\n    data = request.get_json()\n    # BUG: no URL validation — attacker can hit internal IPs\n    webhook_url = data.get('url', '')\n    response = requests.get(webhook_url, timeout=5)\n    return {\n        "status_code": response.status_code,\n        "body": response.text[:200]\n    }`,
+    cve_example: "CVE-2019-3799", hint_count: 3, tags: ["ssrf","aws","metadata"]
+  },
+  {
+    id: "weak-crypto", title: "The Password Vault Built on Sand",
+    owasp_id: "A02", owasp_name: "Cryptographic Failures", difficulty: "intermediate", language: "python",
+    description: "This user registration stores passwords. A database breach would expose all passwords in seconds. Why?",
+    vulnerable_code: `import hashlib\n\ndef register_user(username: str, password: str):\n    # BUG: MD5 is not a password hashing function\n    password_hash = hashlib.md5(password.encode()).hexdigest()\n    db.users.insert({"username": username, "password_hash": password_hash})\n\ndef verify_password(username: str, password: str) -> bool:\n    user = db.users.find_one({"username": username})\n    return user and user["password_hash"] == hashlib.md5(password.encode()).hexdigest()`,
+    cve_example: "LinkedIn 2012 breach", hint_count: 3, tags: ["md5","password-hashing","cryptography"]
+  },
+  {
+    id: "race-condition", title: "The Bank That Lets You Double-Spend",
+    owasp_id: "A04", owasp_name: "Insecure Design", difficulty: "advanced", language: "python",
+    description: "This payment endpoint has a subtle race condition that lets users spend the same money twice. Can you find it?",
+    vulnerable_code: `@app.route('/api/transfer', methods=['POST'])\ndef transfer_money():\n    data = request.get_json()\n    amount = data['amount']\n    user = db.get_user(g.current_user_id)\n\n    # BUG: non-atomic check-then-act (TOCTOU)\n    if user.balance < amount:\n        return {"error": "Insufficient funds"}, 400\n\n    # Two concurrent requests both pass this check!\n    db.update_balance(user.id, user.balance - amount)\n    db.update_balance(to_account, balance + amount)\n    return {"success": True}`,
+    cve_example: "Crypto exchange double-spend", hint_count: 3, tags: ["race-condition","toctou","payments"]
+  },
+];
+
+const OWASP_CATEGORIES = [
+  {id:"A01",name:"Broken Access Control"},{id:"A02",name:"Cryptographic Failures"},
+  {id:"A03",name:"Injection"},{id:"A04",name:"Insecure Design"},{id:"A05",name:"Security Misconfiguration"},
+  {id:"A06",name:"Vulnerable Components"},{id:"A07",name:"Auth Failures"},{id:"A08",name:"Integrity Failures"},
+  {id:"A09",name:"Logging Failures"},{id:"A10",name:"SSRF"},
+];
+
+const POINTS = { beginner: 100, intermediate: 250, advanced: 500 };
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+function App() {
+  const [challenges] = useState(EMBEDDED_CHALLENGES);
+  const [selected, setSelected] = useState(null);
+  const [diffFilter, setDiffFilter] = useState('all');
+  const [solved, setSolved] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cm_solved') || '[]'); } catch { return []; }
+  });
+  const [score, setScore] = useState(() => {
+    try { return parseInt(localStorage.getItem('cm_score') || '0'); } catch { return 0; }
+  });
+
+  const addSolved = useCallback((id, difficulty) => {
+    if (solved.includes(id)) return;
+    const newSolved = [...solved, id];
+    const pts = POINTS[difficulty] || 100;
+    const newScore = score + pts;
+    setSolved(newSolved);
+    setScore(newScore);
+    localStorage.setItem('cm_solved', JSON.stringify(newSolved));
+    localStorage.setItem('cm_score', String(newScore));
+  }, [solved, score]);
+
+  const filtered = diffFilter === 'all'
+    ? challenges
+    : challenges.filter(c => c.difficulty === diffFilter);
+
+  return (
+    <div className="app">
+      <nav className="navbar">
+        <div className="logo" onClick={() => setSelected(null)} style={{cursor:'pointer'}}>
+          <span className="logo-icon">🛡️</span>
+          <span><span className="logo-cyber">Cyber</span><span className="logo-mentor">Mentor</span></span>
+        </div>
+        <div className="score-badge">
+          <span>🏆</span>
+          <span className="score-num">{score.toLocaleString()}</span>
+          <span style={{color:'var(--text-muted)',fontSize:12}}>pts</span>
+          <span style={{color:'var(--text-muted)',fontSize:12}}>·</span>
+          <span style={{color:'var(--accent3)',fontFamily:'var(--font-mono)',fontSize:12}}>
+            {solved.length}/{challenges.length} solved
+          </span>
+        </div>
+      </nav>
+
+      <div className="main">
+        <aside className="sidebar">
+          <div className="sidebar-section">
+            <div className="sidebar-label">Difficulty</div>
+            <div className="diff-filter">
+              {['all','beginner','intermediate','advanced'].map(d => (
+                <button
+                  key={d}
+                  className={`diff-btn ${d} ${diffFilter===d?'active':''}`}
+                  onClick={() => setDiffFilter(d)}
+                >
+                  {d === 'all' ? 'All' : d.slice(0,3).toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <div className="sidebar-label">Challenges ({filtered.length})</div>
+            {filtered.map(c => (
+              <div
+                key={c.id}
+                className={`challenge-item ${selected?.id===c.id?'active':''} ${solved.includes(c.id)?'solved':''}`}
+                onClick={() => setSelected(c)}
+              >
+                <span className={`diff-dot ${c.difficulty}`} />
+                <div className="challenge-meta">
+                  <div className="challenge-title">{c.title}</div>
+                  <div className="challenge-tags-row">
+                    <span className="owasp-chip">{c.owasp_id}</span>
+                  </div>
+                </div>
+                {solved.includes(c.id) && <span className="solved-check">✓</span>}
+              </div>
+            ))}
+          </div>
+
+          <div style={{padding:'0 20px'}}>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width:`${(solved.length/challenges.length)*100}%`}} />
+            </div>
+            <div style={{fontSize:11,color:'var(--text-muted)',textAlign:'center'}}>
+              {Math.round((solved.length/challenges.length)*100)}% complete
+            </div>
+          </div>
+        </aside>
+
+        <main className="content">
+          {selected
+            ? <ChallengeView
+                key={selected.id}
+                challenge={selected}
+                isSolved={solved.includes(selected.id)}
+                onSolve={() => addSolved(selected.id, selected.difficulty)}
+              />
+            : <Hero challenges={challenges} solved={solved} score={score} onStart={() => setSelected(challenges[0])} />
+          }
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ─── Hero Landing ─────────────────────────────────────────────────────────────
+function Hero({ challenges, solved, score, onStart }) {
+  return (
+    <div className="hero fade-in">
+      <div className="hero-icon">🛡️</div>
+      <h1 className="hero-title">
+        Learn Security by<br /><span className="cyan">Breaking Things</span>
+      </h1>
+      <p className="hero-subtitle">
+        Master the OWASP Top 10 through real, interactive code challenges.
+        Spot vulnerabilities, get AI-powered explanations, and write actual fixes —
+        just like real security engineers do.
+      </p>
+
+      <div className="owasp-grid">
+        {OWASP_CATEGORIES.map(c => (
+          <div key={c.id} className="owasp-card">
+            <span className="owasp-card-id">{c.id}</span>
+            {c.name}
+          </div>
+        ))}
+      </div>
+
+      <button className="start-btn" onClick={onStart}>
+        🚀 Start Learning
+      </button>
+
+      <div className="stats-row">
+        <div className="stat">
+          <div className="stat-num">{challenges.length}</div>
+          <div className="stat-label">Challenges</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num">10</div>
+          <div className="stat-label">OWASP Categories</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num">{solved.length}</div>
+          <div className="stat-label">Solved</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num">{score.toLocaleString()}</div>
+          <div className="stat-label">Points</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Challenge View ───────────────────────────────────────────────────────────
+function ChallengeView({ challenge, isSolved, onSolve }) {
+  const [tab, setTab] = useState('challenge');
+  const [level, setLevel] = useState('beginner');
+  const [explanation, setExplanation] = useState('');
+  const [loadingExplain, setLoadingExplain] = useState(false);
+  const [hints, setHints] = useState([]);
+  const [hintIdx, setHintIdx] = useState(0);
+  const [userFix, setUserFix] = useState('');
+  const [fixReview, setFixReview] = useState('');
+  const [loadingFix, setLoadingFix] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatMsg, setChatMsg] = useState('');
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [justSolved, setJustSolved] = useState(false);
+
+  async function callAPI(endpoint, body) {
+    // Try real backend first, fall back to demo mode
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      // Demo mode — return placeholder
+      return null;
+    }
+  }
+
+  async function explain() {
+    setLoadingExplain(true);
+    setExplanation('');
+    const data = await callAPI('/api/mentor/explain', {
+      challenge_id: challenge.id,
+      user_level: level,
+    });
+    if (data) {
+      setExplanation(data.explanation);
+      // Count as solved when explanation requested
+      if (!isSolved) { onSolve(); setJustSolved(true); }
+    } else {
+      setExplanation(getDemoExplanation(challenge, level));
+      if (!isSolved) { onSolve(); setJustSolved(true); }
+    }
+    setLoadingExplain(false);
+  }
+
+  async function getHint() {
+    const hintData = challenge.hints
+      ? challenge.hints[Math.min(hintIdx, challenge.hints.length - 1)]
+      : DEMO_HINTS[challenge.id]?.[Math.min(hintIdx, 2)];
+    if (hintData) {
+      setHints(prev => [...prev, hintData]);
+      setHintIdx(prev => prev + 1);
+    } else {
+      const data = await callAPI('/api/mentor/hint', {challenge_id: challenge.id, hint_number: hintIdx});
+      if (data) { setHints(prev => [...prev, data.hint]); setHintIdx(prev => prev + 1); }
+    }
+  }
+
+  async function reviewFix() {
+    if (!userFix.trim()) return;
+    setLoadingFix(true);
+    setFixReview('');
+    const data = await callAPI('/api/mentor/review-fix', {
+      challenge_id: challenge.id,
+      user_fix: userFix,
+      language: challenge.language,
+    });
+    setFixReview(data ? data.review : getDemoFixReview(challenge));
+    setLoadingFix(false);
+  }
+
+  async function sendChat() {
+    if (!chatMsg.trim() || loadingChat) return;
+    const msg = chatMsg.trim();
+    setChatMsg('');
+    const userMsg = {role: 'user', content: msg};
+    setChatHistory(prev => [...prev, userMsg]);
+    setLoadingChat(true);
+    const data = await callAPI('/api/mentor/chat', {
+      message: msg,
+      challenge_id: challenge.id,
+      history: chatHistory.slice(-6),
+    });
+    const reply = data ? data.reply : getDemoChatReply(msg, challenge);
+    setChatHistory(prev => [...prev, {role: 'assistant', content: reply}]);
+    setLoadingChat(false);
+  }
+
+  const diffBadge = `badge-${challenge.difficulty}`;
+
+  return (
+    <div className="challenge-view">
+      {justSolved && !isSolved && (
+        <div className="solved-banner">
+          <div className="points-pop">+{POINTS[challenge.difficulty]} pts</div>
+          <h3>🎉 Challenge Solved!</h3>
+          <p>Great work! Keep going to build your security expertise.</p>
+        </div>
+      )}
+
+      <div className="challenge-header">
+        <div className="challenge-header-left">
+          <h2 className="challenge-title-big">{challenge.title}</h2>
+          <div className="challenge-badges">
+            <span className={`badge badge-owasp`}>⚡ {challenge.owasp_id} — {challenge.owasp_name}</span>
+            <span className={`badge ${diffBadge}`}>
+              {challenge.difficulty === 'beginner' ? '🟢' : challenge.difficulty === 'intermediate' ? '🟡' : '🔴'} {challenge.difficulty}
+            </span>
+            <span className="badge" style={{background:'rgba(100,116,139,0.1)',color:'var(--text-muted)',border:'1px solid var(--border)'}}>
+              {challenge.language}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {challenge.cve_example && (
+        <div className="cve-box">
+          <span className="cve-icon">📋</span>
+          <span className="cve-label">Real-world example:</span>
+          <span className="cve-value">{challenge.cve_example}</span>
+        </div>
+      )}
+
+      <div className="tab-bar">
+        {['challenge','fix-it','chat'].map(t => (
+          <div key={t} className={`tab ${tab===t?'active':''}`} onClick={() => setTab(t)}>
+            {t === 'challenge' ? '🎯 Challenge' : t === 'fix-it' ? '🔧 Fix It' : '💬 Ask Mentor'}
+          </div>
+        ))}
+      </div>
+
+      {tab === 'challenge' && (
+        <>
+          <div className="description-box">{challenge.description}</div>
+
+          <div className="code-section">
+            <div className="code-header">
+              <span className="code-lang">📄 {challenge.language}</span>
+              <span className="code-label">⚠ VULNERABLE CODE</span>
+            </div>
+            <pre>{challenge.vulnerable_code}</pre>
+          </div>
+
+          {hints.map((h, i) => (
+            <div key={i} className="hint-box">
+              <div className="hint-label">💡 Hint {i + 1}</div>
+              <div className="hint-text">{h}</div>
+            </div>
+          ))}
+
+          <div className="action-row">
+            <button className="btn btn-warn" onClick={getHint} disabled={hintIdx >= 3}>
+              💡 {hintIdx === 0 ? 'Get a Hint' : hintIdx >= 3 ? 'No more hints' : 'Next Hint'}
+            </button>
+          </div>
+
+          <div className="level-selector">
+            <span className="level-label">Explain at level:</span>
+            {['beginner','intermediate','advanced'].map(l => (
+              <button key={l} className={`level-btn ${level===l?'active':''}`} onClick={() => setLevel(l)}>{l}</button>
+            ))}
+          </div>
+
+          <div className="action-row">
+            <button className="btn btn-primary" onClick={explain} disabled={loadingExplain}>
+              {loadingExplain ? '⏳ Thinking...' : '🤖 Explain the Vulnerability'}
+            </button>
+          </div>
+
+          {loadingExplain && (
+            <div className="loading-row">
+              <div className="spinner" />
+              <span>CyberMentor is analyzing the vulnerability…</span>
+            </div>
+          )}
+
+          {explanation && (
+            <div className="ai-response">
+              <div className="ai-header">🤖 CyberMentor · {level} explanation</div>
+              <div className="ai-content">{formatMd(explanation)}</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'fix-it' && (
+        <>
+          <div className="description-box">
+            Write your fix for the vulnerability in <strong>{challenge.language}</strong>.
+            Focus on the insecure pattern — you don't need to rewrite the whole function.
+          </div>
+
+          <div className="code-section" style={{marginBottom:12}}>
+            <div className="code-header">
+              <span className="code-lang">📄 original ({challenge.language})</span>
+              <span className="code-label">⚠ VULNERABLE</span>
+            </div>
+            <pre style={{maxHeight:200,overflow:'auto'}}>{challenge.vulnerable_code}</pre>
+          </div>
+
+          <div className="fix-editor">
+            <div className="fix-editor-header">
+              ✏️ Your Fix ({challenge.language})
+            </div>
+            <textarea
+              value={userFix}
+              onChange={e => setUserFix(e.target.value)}
+              placeholder={`# Write your secure version here...\n# Focus on fixing the vulnerability`}
+              spellCheck={false}
+            />
+          </div>
+
+          <button className="btn btn-success" onClick={reviewFix} disabled={loadingFix || !userFix.trim()}>
+            {loadingFix ? '⏳ Reviewing...' : '🛡️ Review My Fix'}
+          </button>
+
+          {loadingFix && (
+            <div className="loading-row" style={{marginTop:12}}>
+              <div className="spinner" />
+              <span>Reviewing your fix…</span>
+            </div>
+          )}
+
+          {fixReview && (
+            <div className="ai-response" style={{marginTop:16}}>
+              <div className="ai-header">🔍 Fix Review</div>
+              <div className="ai-content">{formatMd(fixReview)}</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'chat' && (
+        <>
+          <div className="description-box">
+            Ask CyberMentor anything about this challenge — attack patterns, mitigations, related CVEs, or security concepts.
+          </div>
+
+          <div className="chat-container">
+            {chatHistory.length === 0 && (
+              <div style={{textAlign:'center',color:'var(--text-muted)',fontSize:14,padding:20}}>
+                💬 Start a conversation with your AI security mentor
+              </div>
+            )}
+            {chatHistory.map((m, i) => (
+              <div key={i} className={`chat-msg ${m.role === 'user' ? 'user' : ''}`}>
+                <div className={`chat-avatar ${m.role === 'user' ? 'user' : 'ai'}`}>
+                  {m.role === 'user' ? '👤' : '🤖'}
+                </div>
+                <div className={`chat-bubble ${m.role === 'user' ? 'user' : 'ai'}`}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loadingChat && (
+              <div className="chat-msg">
+                <div className="chat-avatar ai">🤖</div>
+                <div className="chat-bubble ai">
+                  <div className="loading-row" style={{padding:0}}>
+                    <div className="spinner" style={{width:14,height:14}} />
+                    <span style={{fontSize:12}}>Thinking…</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="chat-input-row">
+            <input
+              className="chat-input"
+              value={chatMsg}
+              onChange={e => setChatMsg(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendChat()}
+              placeholder="Ask about the vulnerability, exploits, defences…"
+            />
+            <button className="btn btn-primary" onClick={sendChat} disabled={loadingChat || !chatMsg.trim()}>
+              Send
+            </button>
+          </div>
+
+          <div style={{marginTop:12,display:'flex',gap:6,flexWrap:'wrap'}}>
+            {[
+              "How would an attacker exploit this?",
+              "Show me the fix",
+              "Give me a real CVE example",
+              "What OWASP mitigation applies?",
+            ].map(q => (
+              <button key={q} className="btn btn-secondary" style={{fontSize:12,padding:'5px 12px'}}
+                onClick={() => { setChatMsg(q); }}>
+                {q}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Demo fallbacks (when no backend) ────────────────────────────────────────
+const DEMO_HINTS = {
+  "sqli-01": [
+    "What happens when password is: ' OR '1'='1?",
+    "The SQL becomes: WHERE username='admin' AND password='' OR '1'='1' — always true!",
+    "Fix: cursor.execute('SELECT * FROM users WHERE username=? AND password=?', (username, password))"
+  ],
+  "xss-01": ["innerHTML parses and executes HTML including <script> tags", "Try: <script>alert(document.cookie)</script>", "Fix: use textContent instead of innerHTML"],
+};
+
+function getDemoExplanation(challenge, level) {
+  const explanations = {
+    "sqli-01": `🎯 **The Core Issue**
+The \`login()\` function builds a SQL query by directly concatenating user input into the query string. This means an attacker can inject SQL code by crafting a malicious username or password.
+
+🔥 **How It's Exploited**
+An attacker enters password: \`' OR '1'='1\`
+
+The resulting SQL becomes:
+\`SELECT * FROM users WHERE username='admin' AND password='' OR '1'='1'\`
+
+Since \`'1'='1'\` is always true, this returns ALL users — granting instant admin access!
+
+🛡️ **The Fix**
+Use parameterized queries (prepared statements):
+\`\`\`python
+query = "SELECT * FROM users WHERE username=? AND password=?"
+cursor.execute(query, (username, password))
+\`\`\`
+
+The database treats parameters as data, never as SQL code.
+
+🧠 **Why It Works**
+Parameterized queries separate code from data. The user input is never interpreted as SQL — it's treated as a literal string value.
+
+🌍 **Real World**
+SQL injection is the most exploited web vulnerability. CVE-2012-1823 affected millions of PHP sites. The 2008 Heartland Payment breach exposed 130M credit cards via SQL injection.`,
+
+    "idor-01": `🎯 **The Core Issue**
+The endpoint retrieves an invoice by ID but never checks if the logged-in user actually owns that invoice. This is called IDOR — Insecure Direct Object Reference.
+
+🔥 **How It's Exploited**
+User 42 requests \`GET /api/invoice/1\` and receives User 1's confidential invoice. They enumerate IDs 1, 2, 3... and download everyone's financial data.
+
+🛡️ **The Fix**
+\`\`\`python
+@app.route('/api/invoice/<int:invoice_id>')
+def get_invoice(invoice_id: int):
+    invoice = db.query("SELECT * FROM invoices WHERE id = ?", (invoice_id,)).fetchone()
+    if not invoice:
+        return {"error": "Not found"}, 404
+    # ← THE FIX: ownership check
+    if invoice['user_id'] != g.current_user.id:
+        return {"error": "Forbidden"}, 403
+    return send_file(f"invoices/{invoice_id}.pdf")
+\`\`\`
+
+🧠 **Why It Works**
+Every resource access must verify the authenticated user has permission for THAT specific resource, not just any resource.`,
+  };
+  return explanations[challenge.id] || `🎯 **${challenge.owasp_id} — ${challenge.owasp_name}**\n\nThis is a ${challenge.difficulty} level challenge demonstrating a real security vulnerability.\n\n🛡️ **Key Fix**\nAlways validate and sanitize user input, use parameterized queries, and verify ownership before returning sensitive data.\n\n*Connect a backend with ANTHROPIC_API_KEY for full AI-powered explanations.*`;
+}
+
+function getDemoFixReview(challenge) {
+  return `✅ **Fix Review**\n\nYour fix looks good! Here are some notes:\n\n- Make sure you're addressing the root cause, not just the symptom\n- Test your fix with the same malicious input that would exploit the original code\n- Consider edge cases and error handling\n\n*Connect a backend with ANTHROPIC_API_KEY for detailed AI-powered fix reviews.*`;
+}
+
+function getDemoChatReply(msg, challenge) {
+  if (msg.toLowerCase().includes('exploit')) {
+    return `For ${challenge.owasp_id} (${challenge.owasp_name}), a common attack would involve crafting malicious input that bypasses the intended security controls. The key is understanding what the code assumes about the input, then violating that assumption.\n\n*Connect a backend with ANTHROPIC_API_KEY for detailed attack scenarios.*`;
+  }
+  return `Great question! The ${challenge.owasp_name} vulnerability is one of the most common and impactful security issues in web applications. The core issue here is that user-supplied data is trusted without proper validation or sanitization.\n\n*Connect a backend with ANTHROPIC_API_KEY for full AI mentor responses.*`;
+}
+
+// ─── Simple markdown formatter ────────────────────────────────────────────────
+function formatMd(text) {
+  // Return text with basic formatting preserved
+  return text;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
