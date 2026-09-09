@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from challenges import CHALLENGES, get_challenge, get_challenges_by_difficulty
+from backend.challenges import CHALLENGES, get_challenge, get_challenges_by_difficulty
 
 logger = structlog.get_logger(__name__)
 
