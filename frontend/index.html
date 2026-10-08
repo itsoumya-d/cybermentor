@@ -987,7 +987,7 @@ function ChallengeView({ challenge, isSolved, onSolve }) {
     if (typeof data?.review === 'string' && data.review.trim()) {
       setFixReview(data.review);
     } else {
-      setFixError('Review unavailable. Your code has not been evaluated. Check that the AI backend is connected, then try again.');
+      setFixError('Review unavailable. No valid feedback was received for your code. Check that the AI backend is connected, then try again.');
     }
     setLoadingFix(false);
   }

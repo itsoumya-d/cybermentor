@@ -76,12 +76,12 @@ const failures = [
 ];
 
 for (const [name, fetch] of failures) {
-  test(`${name} reports no evaluation rather than approving the code`, async () => {
+  test(`${name} reports unavailable feedback rather than approving the code`, async () => {
     const { state, context, review } = harness(fetch);
     const originalFix = context.userFix;
     await review();
     assert.equal(state.review, '');
-    assert.match(state.error, /not been evaluated/i);
+    assert.match(state.error, /no valid feedback was received/i);
     assert.doesNotMatch(state.error, /looks good/i);
     assert.equal(state.loading, false);
     assert.equal(context.userFix, originalFix, 'Keep the editor intact for retry');
@@ -95,7 +95,7 @@ test('a successful retry clears the unavailable state', async () => {
     return response({ review: 'Actual fixture review' });
   });
   await review();
-  assert.match(state.error, /not been evaluated/i);
+  assert.match(state.error, /no valid feedback was received/i);
   await review();
   assert.equal(state.error, '');
   assert.equal(state.review, 'Actual fixture review');
@@ -112,7 +112,7 @@ test('a later failed review never reuses an earlier successful verdict', async (
   assert.equal(state.review, 'Earlier feedback');
   await review();
   assert.equal(state.review, '');
-  assert.match(state.error, /not been evaluated/i);
+  assert.match(state.error, /no valid feedback was received/i);
 });
 
 test('loading clears after a delayed failure and the form remains retryable', async () => {
@@ -124,7 +124,7 @@ test('loading clears after a delayed failure and the form remains retryable', as
   await pending;
   assert.equal(state.loading, false);
   assert.equal(state.review, '');
-  assert.match(state.error, /not been evaluated/i);
+  assert.match(state.error, /no valid feedback was received/i);
 });
 
 test('blank submissions do not request or synthesize feedback', async () => {
