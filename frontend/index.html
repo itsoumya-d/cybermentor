@@ -919,6 +919,7 @@ function ChallengeView({ challenge, isSolved, onSolve }) {
   const [hintIdx, setHintIdx] = useState(0);
   const [userFix, setUserFix] = useState('');
   const [fixReview, setFixReview] = useState('');
+  const [fixError, setFixError] = useState('');
   const [loadingFix, setLoadingFix] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [chatMsg, setChatMsg] = useState('');
@@ -977,12 +978,17 @@ function ChallengeView({ challenge, isSolved, onSolve }) {
     if (!userFix.trim()) return;
     setLoadingFix(true);
     setFixReview('');
+    setFixError('');
     const data = await callAPI('/api/mentor/review-fix', {
       challenge_id: challenge.id,
       user_fix: userFix,
       language: challenge.language,
     });
-    setFixReview(data ? data.review : getDemoFixReview(challenge));
+    if (typeof data?.review === 'string' && data.review.trim()) {
+      setFixReview(data.review);
+    } else {
+      setFixError('Review unavailable. Your code has not been evaluated. Check that the AI backend is connected, then try again.');
+    }
     setLoadingFix(false);
   }
 
@@ -1138,6 +1144,12 @@ function ChallengeView({ challenge, isSolved, onSolve }) {
             </div>
           )}
 
+          {fixError && (
+            <div className="description-box" role="alert" style={{marginTop:16,borderLeftColor:'var(--danger)'}}>
+              {fixError}
+            </div>
+          )}
+
           {fixReview && (
             <div className="ai-response" style={{marginTop:16}}>
               <div className="ai-header">🔍 Fix Review</div>
@@ -1221,7 +1233,7 @@ const DEMO_HINTS = {
     "The SQL becomes: WHERE username='admin' AND password='' OR '1'='1' — always true!",
     "Fix: cursor.execute('SELECT * FROM users WHERE username=? AND password=?', (username, password))"
   ],
-  "xss-01": ["innerHTML parses and executes HTML including <script> tags", "Try: <script>alert(document.cookie)</script>", "Fix: use textContent instead of innerHTML"],
+  "xss-01": ["innerHTML parses and executes HTML including <script> tags", "Try: <script>alert(document.cookie)<\/script>", "Fix: use textContent instead of innerHTML"],
 };
 
 function getDemoExplanation(challenge, level) {
@@ -1275,10 +1287,6 @@ def get_invoice(invoice_id: int):
 Every resource access must verify the authenticated user has permission for THAT specific resource, not just any resource.`,
   };
   return explanations[challenge.id] || `🎯 **${challenge.owasp_id} — ${challenge.owasp_name}**\n\nThis is a ${challenge.difficulty} level challenge demonstrating a real security vulnerability.\n\n🛡️ **Key Fix**\nAlways validate and sanitize user input, use parameterized queries, and verify ownership before returning sensitive data.\n\n*Connect a backend with ANTHROPIC_API_KEY for full AI-powered explanations.*`;
-}
-
-function getDemoFixReview(challenge) {
-  return `✅ **Fix Review**\n\nYour fix looks good! Here are some notes:\n\n- Make sure you're addressing the root cause, not just the symptom\n- Test your fix with the same malicious input that would exploit the original code\n- Consider edge cases and error handling\n\n*Connect a backend with ANTHROPIC_API_KEY for detailed AI-powered fix reviews.*`;
 }
 
 function getDemoChatReply(msg, challenge) {
