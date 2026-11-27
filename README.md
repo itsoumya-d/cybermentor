@@ -119,14 +119,34 @@ cybermentor/
 ├── backend/
 │   ├── main.py           ← FastAPI app + AI mentor endpoints
 │   ├── challenges.py     ← 15 OWASP challenge definitions
+│   ├── test_main.py      ← Endpoint test suite
+│   ├── test_bench.py     ← Benchmark test suite
 │   ├── requirements.txt
 │   └── .env.example
+├── bench/
+│   └── benchmark_catalog.py ← Query throughput, latency & pattern accuracy benchmark
+├── results/
+│   └── 2026-11-27.md     ← Evaluation benchmark report
 ├── frontend/
 │   └── index.html        ← Self-contained React 18 SPA (no build step)
 ├── Dockerfile
 ├── README.md
 └── LICENSE               ← MIT
 ```
+
+---
+
+## 📊 Performance & Evaluation Benchmarks
+
+Measured on fixed input across all 15 OWASP challenges (Python runtime). Full evaluation details in [`results/2026-11-27.md`](results/2026-11-27.md).
+
+| Metric | Target | Measured Result | Status |
+|---|---|---|---|
+| Catalog Query Throughput | > 50,000 ops/s | 3,451,910 ops/s | PASS |
+| Filter Latency (p50) | < 0.05 ms | 0.0002 ms | PASS |
+| Endpoint Batch Latency (p50) | < 10.0 ms | 4.89 ms | PASS |
+| Endpoint Throughput | > 300 req/s | 805.4 req/s | PASS |
+| Vulnerability Pattern Identification | 100% | 100.0% (15/15) | PASS |
 
 ---
 
